@@ -1,0 +1,89 @@
+---
+output:
+  officedown::rdocx_document:
+    plots: 
+      align: center
+    tables: 
+      align: autofit
+    reference_docx: ../etc/my-styles.docx
+---
+
+```{r, echo=FALSE}
+check.diff <- function(a, b) {
+  if(any(shapiro.test(a)$p.value < 0.05, shapiro.test(b)$p.value < 0.05)) {
+    pval <- wilcox.test(a, b)$p.value
+    pval.w.crit <- sprintf("%.4f (%s)", pval, "w")
+  } else {
+    pval <- wilcox.test(a, b)$p.value
+    pval.w.crit <- sprintf("%.4f (%s)", pval, "t")
+  }
+  if(pval < 0.05) {
+    text = sprintf("найдены статистически значимые отличия (%s)", pval.w.crit)
+  } else {
+    text = sprintf("статистически значимых отличий не обнаружено (%s)", pval.w.crit)
+  }
+  res <- data.frame(pval = pval,
+                    pval.w.crit = pval.w.crit,
+                    text = text)
+  
+  res
+}
+
+d <- openxlsx::read.xlsx("../data/working.dataset.xlsx")
+```
+
+## Описание исследуемых групп
+
+В исследование включено ```r nrow(d)``` пациентов (```r sum(d$sex == "м")``` мужчин и ```r sum(d$sex == "ж")``` женщин).
+
+Антропометрические данные приведены в таблице ниже.
+
+```{r, echo=FALSE}
+tbl <- aggregate(. ~ group + sex, d[,c("group", "sex", "age", "temp", "weight", "height")], function(x) sprintf("%.2f±%.2f", mean(x), sd(x)))
+names(tbl) <- c("Группа", "Пол", "Возраст, полных лет", "Температура, °C", "Вес, кг", "Рост, см")
+tbl <- flextable::flextable(tbl)
+tbl <- flextable::autofit(tbl)
+flextable::theme_box(tbl)
+```
+
+Согласно полученным результатам исследуемые группы не отличались по возрасту (```r check.diff(a = d$age[d$group == "T"], b = d$age[d$group == "R"])$pval.w.crit```), температуре тела (```r check.diff(a = d$temp[d$group == "T"], b = d$temp[d$group == "R"])$pval.w.crit```), весу (```r check.diff(a = d$weight[d$group == "T"], b = d$weight[d$group == "R"])$pval.w.crit```) и росту (```r check.diff(a = d$height[d$group == "T"], b = d$height[d$group == "R"])$pval.w.crit```).
+
+
+## Сравнение исследуемых групп
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+ll <- list()
+for(x in c("protein", "glucose", "urea")) {
+  ll[[x]] <- check.diff(a = d[d$group == "T", x], b = d[d$group == "R", x])
+}
+```
+
+# Общий белок
+
+
+По показателю __общий белок__ между группами T и R (```r sprintf("%.2f±%.2f", mean(d$protein[d$group == "T"]), sd(d$protein[d$group == "T"]))``` и ```r sprintf("%.2f±%.2f", mean(d$protein[d$group == "R"]), sd(d$protein[d$group == "R"]))``` г/л соответственно) ```r ll[["protein"]]$text```.
+
+
+```{r, echo=FALSE, fig.height=3.5, fig.width=3.5}
+boxplot(protein ~ group, d, xlab = "Исследуемые группы", ylab = "Общий белок, г/л")
+```
+
+# Глюкоза
+
+
+По показателю __глюкоза__ между группами T и R (```r sprintf("%.2f±%.2f", mean(d$glucose[d$group == "T"]), sd(d$glucose[d$group == "T"]))``` и ```r sprintf("%.2f±%.2f", mean(d$glucose[d$group == "R"]), sd(d$glucose[d$group == "R"]))``` ммоль/л соответственно) ```r ll[["glucose"]]$text```.
+
+
+```{r, echo=FALSE, fig.height=3.5, fig.width=3.5}
+boxplot(glucose ~ group, d, xlab = "Исследуемые группы", ylab = "Глюкоза, ммоль/мл")
+```
+
+# Мочевина
+
+
+По показателю __мочевина__ между группами T и R (```r sprintf("%.2f±%.2f", mean(d$urea[d$group == "T"]), sd(d$urea[d$group == "T"]))``` и ```r sprintf("%.2f±%.2f", mean(d$urea[d$group == "R"]), sd(d$urea[d$group == "R"]))``` ммоль/мл соответственно) ```r ll[["urea"]]$text```.
+
+
+```{r, echo=FALSE, fig.height=3.5, fig.width=3.5}
+boxplot(urea ~ group, d, xlab = "Исследуемые группы", ylab = "Мочевина, ммоль/мл")
+```
