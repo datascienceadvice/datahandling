@@ -48,7 +48,7 @@ write.xlsx(x = biochemistry, file = "data/tidy/Биохимический ана
 
 ################################################################################
 # consolidation
-options(digits=10) # to correctly format numbers wo extra digits
+options(digits=10) # to correctly format numbers w/o extra digits
 
 # read tidy data
 ids           <- read.xlsx("data/tidy/Идентификаторы.xlsx",             sheet = "Идентификаторы")

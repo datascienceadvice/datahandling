@@ -14,7 +14,7 @@ check.diff <- function(a, b) {
     pval <- wilcox.test(a, b)$p.value
     pval.w.crit <- sprintf("%.4f (%s)", pval, "w")
   } else {
-    pval <- wilcox.test(a, b)$p.value
+    pval <- t.test(a, b)$p.value
     pval.w.crit <- sprintf("%.4f (%s)", pval, "t")
   }
   if(pval < 0.05) {
